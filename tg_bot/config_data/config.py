@@ -17,3 +17,5 @@ DEFAULT_COMMANDS = (
     ('bestdeal', 'Настройка поиска'),
     ('history', 'История поиска')
 )
+
+url_city = "https://booking-com15.p.rapidapi.com/api/v1/meta/locationToLatLong"
