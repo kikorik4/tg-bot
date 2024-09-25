@@ -19,4 +19,4 @@ DEFAULT_COMMANDS = (
 )
 
 url_city = "https://booking-com15.p.rapidapi.com/api/v1/hotels/searchDestination"
-url_hotel = "https://booking-com15.p.rapidapi.com/api/v1/hotels/getFilter"
+url_hotel = "https://booking-com15.p.rapidapi.com/api/v1/hotels/searchHotels"

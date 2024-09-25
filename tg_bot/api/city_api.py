@@ -27,18 +27,16 @@ def get_hotel_id(dest_id: str, search_type: str, checkinDate: str, checkoutDate:
     response_hotels = requests.get(url_hotel, headers=headers_hotels, params=querystring)
     return response_hotels
 
-try:
-    def send_hotel_result(info,func):
-        dest_id = info['data'][0]['dest_id']
-        search_type = info['data'][0]['search_type']
-        hotel_list = []
-        hotels = func(f'{dest_id}', f'{search_type}', "2024-09-25", "2024-09-27")
-        info_hotels = hotels.json()
-        for i in info_hotels["data"]['hotels']:
-           hotel_list.append(i['property']['name'])
-        hotel_str = '\n'.join(hotel_list)
-        return hotel_str
-finally:
-    pass
+def send_hotel_result(info,func):
+    dest_id = info['data'][0]['dest_id']
+    search_type = info['data'][0]['search_type']
+    hotel_list = []
+    hotels = func(f'{dest_id}', f'{search_type}', "2024-09-25", "2024-09-27")
+    info_hotels = hotels.json()
+    for i in info_hotels["data"]['hotels']:
+        hotel_list.append(i['property']['name'])
+    hotel_str = '\n'.join(hotel_list)
+    return hotel_str
+
 
 
