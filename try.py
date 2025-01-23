@@ -1,14 +1,6 @@
-shop = {
-    'Products': {
-        'Lemon': 0,
-        'Orange': 0
-    }
-}
+from datetime import datetime
 
-text = 'Магазин:\n'
-
-for product in shop['Products'].items():
-    text += f'    {product[0]}: {product[1]}\n'
-
-print(text)
-
+src = '09-09-2025'
+d = datetime.strptime(src, '%d-%m-%Y')
+dst = d.strftime('%Y-%m-%d')
+print(dst)
