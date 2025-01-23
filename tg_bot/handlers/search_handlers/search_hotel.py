@@ -70,7 +70,7 @@ def get_city(message):
     city_json = city_inf.json()
     hotel_res = send_hotel_result(city_json, information[chat_id]['checkIn'],
                                  information[chat_id]['checkOut'], get_hotel_id)
-    bot.send_message(chat_id, f'Список отелей:{hotel_res}')
+    bot.send_message(chat_id, f'Список отелей:\n{hotel_res}')
 
 
 
