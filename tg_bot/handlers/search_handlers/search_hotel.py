@@ -1,7 +1,7 @@
 from pyexpat.errors import messages
 from datetime import datetime
 from telebot.types import Message
-import logger
+from logger import logger
 from tg_bot.api.city_api import send_hotel_result, get_city_id, get_hotel_id
 from tg_bot.loader import bot
 from tg_bot.states.info_states import UserState
@@ -31,8 +31,9 @@ def city_check(message):
         bot.send_message(chat_id, 'Ты неправ, мой друг')
         again = error_handler(message)
     else:
+        logger.info('Я иду дальше')
         information[chat_id] = {}
-        bot.register_next_step_handler(message,save_city)
+        to = save_city(message)
 #    bot.set_state(message.from_user.id,UserState.checkIn)
     with bot.retrieve_data(message.from_user.id) as data:
         data['city'] = {'city': city}

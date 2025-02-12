@@ -21,6 +21,8 @@ def get_city_id(city: str, ):
             dest_id = city_json['data'][0]['dest_id']
             if isinstance(dest_id, str):
                 return city_json
+            else:
+                raise IndexError
 
 
 def get_api_city(city: str):
