@@ -19,10 +19,8 @@ def get_city_id(city: str, ):
             logger.info('response')
             city_json = response.json()
             dest_id = city_json['data'][0]['dest_id']
-            if dest_id is str:
-                return dest_id
-           # else:
-               # raise TypeError
+            if isinstance(dest_id, str):
+                return city_json
 
 
 def get_api_city(city: str):

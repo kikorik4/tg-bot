@@ -20,13 +20,16 @@ def city_check(message):
     city = message.text.strip()
     try:
         city_inf = get_city_id(f'{city}')
-   # except TypeError as t:
-        #bot.send_message(chat_id, 'Шо то не так')
-       # again = error_handler(message)
+    except TypeError as t:
+        bot.send_message(chat_id, 'Шо то не так')
+        again = error_handler(message)
     except KeyError as k:
         bot.send_message(chat_id, 'Введите город еще раз!')
     except ValueError as v:
         bot.send_message(chat_id, 'Введите город еще раз!')
+    except IndexError as i:
+        bot.send_message(chat_id, 'Ты неправ, мой друг')
+        again = error_handler(message)
     else:
         information[chat_id] = {}
         bot.register_next_step_handler(message,save_city)
@@ -101,9 +104,9 @@ def get_city(message):
                                  information[chat_id]['checkOut'], get_hotel_id)
     bot.send_message(chat_id, f'Список отелей:\n{hotel_res}')
 
-#def error_handler(message):
-   # bot.send_message(message.chat.id, 'Введите город еще раз!')
-  #  bot.register_next_step_handler(message, city_check)
+def error_handler(message):
+    bot.send_message(message.chat.id, 'Введите город еще раз!')
+    bot.register_next_step_handler(message, city_check)
 
 
 

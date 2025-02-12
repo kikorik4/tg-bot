@@ -11,9 +11,22 @@ def get_hotel_id(dest_id: str, search_type: str, checkinDate: str, checkoutDate:
     response_hotels = requests.get(url_hotel, headers=headers, params=querystring)
     return response_hotels
 
-l = get_hotel_id('-2092174', 'CITY', '2025-01-25', '2025-01-26')
-l = l.json()
-print(l)
+#l = get_hotel_id('-2092174', 'CITY', '2025-01-25', '2025-01-26')
+#l = l.json()
+#print(l)
+
+i_id = {'status': True, 'message': 'Success', 'timestamp': 1739341662140,
+        'data': [{'dest_id': '-2601889', 'search_type': 'city', 'cc1': 'gb', 'hotels': 14522, 'roundtrip': 'GhA5NTFmMmQ2ZjdjN2UwNTBmIAAoATICZW46BmxvbmRvbkAASgBQAA==', 'image_url': 'https://cf.bstatic.com/xdata/images/city/150x150/977261.jpg?k=6e056b414cda72f979d7227aff6f5cb43035a30555649dce0292bae146ba4d57&o=', 'dest_type': 'city', 'nr_hotels': 14522, 'lc': 'en', 'label': 'London, Greater London, United Kingdom', 'city_ufi': None, 'name': 'London', 'longitude': -0.12763432, 'city_name': 'London', 'type': 'ci', 'region': 'Greater London', 'latitude': 51.50739, 'country': 'United Kingdom'},
+                 {'dest_id': '2280', 'search_type': 'district', 'city_ufi': -2601889, 'name': 'Central London', 'nr_hotels': 5207, 'label': 'Central London, London, Greater London, United Kingdom', 'lc': 'en', 'hotels': 5207, 'image_url': 'https://cf.bstatic.com/xdata/images/district/150x150/56431.jpg?k=c580405cbf1e9c2cf17fd39015b08d13a04589a72afab80bb9419b6bfcebdd51&o=', 'dest_type': 'district', 'roundtrip': 'GhA5NTFmMmQ2ZjdjN2UwNTBmIAEoATICZW46BmxvbmRvbkAASgBQAA==', 'cc1': 'gb', 'country': 'United Kingdom', 'latitude': 51.507282, 'region': 'Greater London', 'longitude': -0.13493559, 'city_name': 'London', 'type': 'di'},
+                 {'dest_id': '4', 'search_type': 'airport', 'country': 'United Kingdom', 'region': 'Greater London', 'latitude': 51.4713, 'type': 'ai', 'longitude': -0.452693, 'city_name': 'London', 'name': 'London Heathrow Airport', 'city_ufi': -2601889, 'lc': 'en', 'label': 'London Heathrow Airport, London, Greater London, United Kingdom', 'nr_hotels': 126, 'roundtrip': 'GhA5NTFmMmQ2ZjdjN2UwNTBmIAIoATICZW46BmxvbmRvbkAASgBQAA==', 'dest_type': 'airport', 'image_url': 'https://cf.bstatic.com/static/img/plane-100.jpg', 'hotels': 126, 'cc1': 'gb'},
+                 {'dest_id': '20', 'search_type': 'airport', 'cc1': 'gb', 'hotels': 28, 'roundtrip': 'GhA5NTFmMmQ2ZjdjN2UwNTBmIAMoATICZW46BmxvbmRvbkAASgBQAA==', 'dest_type': 'airport', 'image_url': 'https://cf.bstatic.com/static/img/plane-100.jpg', 'nr_hotels': 28, 'lc': 'en', 'label': 'London Gatwick Airport, London, Greater London, United Kingdom', 'name': 'London Gatwick Airport', 'city_ufi': -2601889, 'longitude': -0.169334, 'city_name': 'London', 'type': 'ai', 'region': 'Greater London', 'latitude': 51.1584, 'country': 'United Kingdom'},
+                 {'dest_id': '-1225311', 'search_type': 'city', 'hotels': 274, 'roundtrip': 'GhA5NTFmMmQ2ZjdjN2UwNTBmIAQoATICZW46BmxvbmRvbkAASgBQAA==', 'image_url': 'https://cf.bstatic.com/xdata/images/city/150x150/722206.jpg?k=0a7c6c682e004cb0e16601ec69169f06d769244b04b66f6860ecee8ecf39c761&o=', 'dest_type': 'city', 'cc1': 'za', 'name': 'East London', 'city_ufi': None, 'nr_hotels': 274, 'lc': 'en', 'label': 'East London, Eastern Cape, South Africa', 'region': 'Eastern Cape', 'latitude': -33.01665, 'longitude': 27.904346, 'city_name': 'East London', 'type': 'ci', 'country': 'South Africa'}]}
+idd = i_id['data'][0]['dest_id']
+if isinstance(idd, str):
+    print(idd)
+else:
+    None
+
 
 
 
@@ -1103,6 +1116,6 @@ id = {
     }
 }
 
-print(id['data']['filters'][6]['options'])
-for i in id['data']['filters'][6]['options']:
-    print(i['title'])
+#print(id['data']['filters'][6]['options'])
+#for i in id['data']['filters'][6]['options']:
+  #  print(i['title'])
