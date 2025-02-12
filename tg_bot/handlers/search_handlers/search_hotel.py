@@ -1,7 +1,5 @@
 from pyexpat.errors import messages
 from datetime import datetime
-
-from telebot.apihelper import ApiException
 from telebot.types import Message
 import logger
 from tg_bot.api.city_api import send_hotel_result, get_city_id, get_hotel_id
@@ -14,20 +12,24 @@ information = {}
 def start(message):
     chat_id = message.chat.id
     bot.send_message(message.chat.id, 'Привет! Введи название города на латинице')
+    bot.register_next_step_handler(message, city_check)
+
+
+def city_check(message):
+    chat_id = message.chat.id
     city = message.text.strip()
     try:
         city_inf = get_city_id(f'{city}')
-    except ApiException as api:
-        bot.send_message(chat_id, 'Введите город еще раз!')
-        again = start(message)
+   # except TypeError as t:
+        #bot.send_message(chat_id, 'Шо то не так')
+       # again = error_handler(message)
     except KeyError as k:
         bot.send_message(chat_id, 'Введите город еще раз!')
-        again = start(message)
     except ValueError as v:
         bot.send_message(chat_id, 'Введите город еще раз!')
-        again = start(message)
-    information[chat_id] = {}
-    bot.register_next_step_handler(message,save_city)
+    else:
+        information[chat_id] = {}
+        bot.register_next_step_handler(message,save_city)
 #    bot.set_state(message.from_user.id,UserState.checkIn)
     with bot.retrieve_data(message.from_user.id) as data:
         data['city'] = {'city': city}
@@ -99,8 +101,12 @@ def get_city(message):
                                  information[chat_id]['checkOut'], get_hotel_id)
     bot.send_message(chat_id, f'Список отелей:\n{hotel_res}')
 
-def error_handler(message):
-    bot.send_message(message.chat.id, 'Неправильно введена информация!')
+#def error_handler(message):
+   # bot.send_message(message.chat.id, 'Введите город еще раз!')
+  #  bot.register_next_step_handler(message, city_check)
+
+
+
 #def get_data(message):
    # bot.send_message(message.chat.id, 'Введи дату заселения в формате: yyyy-mm-dd')
    # checkIn = message.text.strip()
