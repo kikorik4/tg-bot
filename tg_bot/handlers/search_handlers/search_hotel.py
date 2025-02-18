@@ -1,5 +1,5 @@
 from pyexpat.errors import messages
-from datetime import datetime
+from datetime import datetime,date
 from telebot.types import Message
 from logger import logger
 from tg_bot.api.city_api import send_hotel_result, get_city_id, get_hotel_id
@@ -7,6 +7,8 @@ from tg_bot.loader import bot
 from tg_bot.states.info_states import UserState
 
 information = {}
+current_data = datetime.now().date()
+current_data = str(current_data)
 
 @bot.message_handler(commands=['start'])
 def start(message):
@@ -58,6 +60,8 @@ def save_check_In(message):
     try:
         check_in_data = datetime.strptime(check_in, '%d-%m-%Y')
         checkIn_data = check_in_data.strftime('%Y-%m-%d')
+        if checkIn_data <= current_data:
+            raise ValueError
         information[chat_id]['checkIn'] = checkIn_data
     except ValueError as v:
         bot.send_message(chat_id, 'Введите, пожалуйста, еще раз в верном формате')
@@ -84,6 +88,8 @@ def save_check_Out(message):
     try:
         check_out_data = datetime.strptime(check_out,'%d-%m-%Y')
         checkOut_data = check_out_data.strftime('%Y-%m-%d')
+        if checkOut_data <= current_data or checkOut_data <= information[chat_id]['checkIn']:
+            raise ValueError
         information[chat_id]['checkOut'] = checkOut_data
     except ValueError as v:
         bot.send_message(chat_id, 'Введите, пожалуйста, еще раз в верном формате')
