@@ -1,32 +1,38 @@
 import sqlite3
-from logger import logger
+import json
 
-class UserDb:
-    def __init__(self, db_user):
-        self.connection = sqlite3.connect(db_user, check_same_thread=False)
+
+class UserHistoryDb:
+
+    def __init__(self, db_file):
+        self.connection = sqlite3.connect(db_file, check_same_thread=False)
         self.cursor = self.connection.cursor()
-        self.set_up_db()
+        self.set_up_table()
 
-    def set_up_db(self):
-        logger.info('Я создаю базу)))')
+    def set_up_table(self):
         with self.connection:
-            return self.cursor.execute('''CREATE TABLE IF NOT EXISTS User(
-            userId INTEGER PRIMARY KEY ,
-            firstname TEXT,
-            lastname TEXT,
-            AGE INT NOT NULL DEFAULT 1)
+            return self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS UserHistory(
+            userID INT,
+            search_date datetime DEFAULT CURRENT_DATE,
+            command TEXT,
+            data json)
             ''')
 
-    def check_user(self, user_id):
+    def set_data(self, user_id: int, command: str, data: dict) ->sqlite3.connect('history_user_db').cursor():
         with self.connection:
-            result = self.cursor.execute('SELECT `userId` FROM User WHERE `userId` = ?')
-            return bool(len(result))
+            return self.cursor.execute('''
+            INSERT INTO UserHistory(`userID`, `command`, `data`)
+            VALUES (?,?,?)''', (user_id, command, json.dumps(data)))
 
-    def add_user(self, user_id):
+    def get_data(self, user_id: int, count: int) -> sqlite3.connect('history_user_db'):
         with self.connection:
-            return self.cursor.execute('INSERT INTO User(UserId) VALUES (?)', (user_id))
+            return self.cursor.execute('''
+            SELECT `search_data`, `command`, `data` FROM UserHistoty
+            WHERE `userID` = ? LIMIT?''', (user_id, count))
 
-
-    def filling_db(self, data):
+    def del_data(self, user_id: int) -> sqlite3.connect('history_user_db'):
         with self.connection:
-            self.cursor.execute('UPDATE User SET firstname=?, lastname=?, AGE=? WHERE userId=?', (data['name'], data['surname'], data['age'], data['id']))
+            return self.cursor.execute('''
+            DELETE FROM WHERE `userID` = ?''', (user_id,))
+

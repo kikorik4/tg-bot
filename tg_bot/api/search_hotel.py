@@ -4,6 +4,7 @@ from telebot.types import Message
 from logger import logger
 from tg_bot.api.city_api import send_hotel_result, get_city_id, get_hotel_id
 from tg_bot.loader import bot
+from tg_bot.handlers.search_handlers import filter
 
 
 information = {}
