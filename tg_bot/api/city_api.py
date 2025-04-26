@@ -1,68 +1,71 @@
-import requests
+from typing import Dict
+
 import json
-from logger import logger
-from tg_bot.loader import bot
-from tg_bot.config_data.config import url_city, url_hotel
-#from tg_bot.blahblah import id
 
-
-headers = {
- "x-rapidapi-key": "c4daf61859mshf367daf96a89533p1fa519jsn407321d2c2ff",
- "x-rapidapi-host": "booking-com15.p.rapidapi.com"
-}
-
-
-def get_city_id(city: str, ):
-        querystring = {"query": city}
-        response = requests.request("GET", url_city, headers=headers, params=querystring)
-        if response:
-            logger.info('response')
-            city_json = response.json()
-            dest_id = city_json['data'][0]['dest_id']
-            if isinstance(dest_id, str):
-                return city_json
-            else:
-                raise IndexError
-
-
-def get_api_city(city: str):
-    return f''
-
-
-
-def get_hotel_id(dest_id: str, search_type: str, checkinDate: str, checkoutDate: str):
-    querystring = {"dest_id": dest_id, "search_type": search_type, "arrival_date": checkinDate, "departure_date": checkoutDate, }
+def get_city_id(response_text):
+    """
+    Принимает ответ от сервера с информацией о городе. Возвращает id
+    города.
+    :param response_text: str текстовая строка, ответ от сервера
+    :return:str возвращает id города
+    """
+    if not response_text:
+        raise LookupError('Запрос пуст...')
     try:
-        response_hotels = requests.get(url_hotel, headers=headers, params=querystring)
-        if response_hotels:
-            logger.info('response')
-            return response_hotels
-        else:
-            logger.error('По вашему запросу ничего не найдено. Попробуйте снова /start')
-            return 'По вашему запросу ничего не найдено. Попробуйте снова /start'
-    except BaseException as e:
-        logger.exception(e)
-
-
-def send_hotel_result(info, checkIn, checkOut, func):
-    try:
-        dest_id = info['data'][0]['dest_id']
-        search_type = info['data'][0]['search_type']
-        hotel_list = []
+        dest_id = response_text['data'][0]['dest_id']
     except KeyError:
-        logger.error('Something was wrong!')
-    hotels = func(f'{dest_id}', f'{search_type}', f'{checkIn}', f"{checkOut}")
-    info_hotels = hotels.json()
-    for i in info_hotels['data']['filters'][4]['options']:
-       hotel_list.append(i['title'])
-    hotel_str = '\n'.join(hotel_list)
-    return hotel_str
-
-#def get_api_data(info, func):
-#    return f'{id}'
+        pass
+    return dest_id
 
 
+def get_hotel_id(response_text: str, command: str, min_rate: int, max_rate: int, count) -> Dict:
+    """
+    Принимает ответ от сервера, выбранную команду сортировки, количество отелей, а так же минимальный и максимальный рейтинг. Возвращает отсортированный словарь, в зависимости от команды сортировки.
+    :param response_text: Ответ от сервера, в котором содержится информация об отелях
+    :param command: Команда сортировки
+    :param min_rate: Минимальный рейтинг
+    :param max_rate: Максимальный рейтинг
+    :param count: Количество отелей
+    :return: Dict Возвращает словарь с данными об отелях
+    """
+    data = json.loads(response_text)
+    if not data:
+        raise LookupError('Запрос пуст...')
+    if 'errors' in data.keys():
+        return {'error': data['errors'][0]['message']}
+    hotels_data = {}
+    for num, hotel in enumerate(data['data']['hotels'], 1):
+        try:
+            if num <= count:
+                hotels_data[hotel['property']['name']] = {
+                'name': hotel['property']['name'],
+                'id': hotel['hotel_id'],
+                'rating': hotel['property']['reviewScore'],
+                'price': round(hotel['property']['priceBreakdown']['grossPrice']['value']),
+                'photo': hotel['property']['photoUrls']}
 
+        except (KeyError, TypeError):
+            continue
+    if command == '/highprice':
+        hotels_data = {
+            key: value for key, value in
+            sorted(hotels_data.items(), key=lambda hotel_id: hotel_id[1]['price'], reverse=True)}
 
+    elif command == '/lowprice':
+        hotels_data = {
+            key: value for key, value in
+            sorted(hotels_data.items(), key=lambda hotel_id: hotel_id[1]['price'], reverse=False)}
+            # Обнуляем созданный ранее словарь и добавляем туда только те отели, которые соответствуют диапазону.
+    elif command == '/bestdeal':
+        hotels_data = {}
+        for num, hotel in enumerate(data['data']['hotels'], 1):
+            if min_rate < hotel['property']['reviewScore'] < max_rate and num <= count:
+                hotels_data[hotel['property']['name']] = {
+                    'name': hotel['property']['name'],
+                    'id': hotel['hotel_id'],
+                    'rating': hotel['property']['reviewScore'],
+                    'price': round(hotel['property']['priceBreakdown']['grossPrice']['value']),
+                    'photo': hotel['property']['photoUrls']}
+    return hotels_data
 
 

@@ -1,6 +1,6 @@
 from venv import logger
 from tg_bot.states.survey_user_states import MyStates
-from tg_bot.loader import bot, db_user
+from tg_bot.loader import bot, db_user, db_history
 
 
 @bot.message_handler(commands=['survey'])
@@ -34,13 +34,15 @@ def is_digit(message):
 
 
 @bot.message_handler(state=MyStates.age, is_digit=True)
-def answer_report(message):
-        logger.info('Я туутаа')
-        with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-            data['age'] = int(message.text)
-            bot.send_message(message.chat.id, f"Введеная информация:\nИмя: {data['name']}\nФамилия: {data['surname']}\nВозраст: {data['age']}")
-            db_user.filling_db(data)
-            bot.delete_state(message.from_user.id, message.chat.id)
+def answer_report(message, user_id=None,command='survey'):
+    user_id = message.from_user.id if not user_id else user_id
+    logger.info('Я туутаа')
+    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+        data['age'] = int(message.text)
+        bot.send_message(message.chat.id, f"Введеная информация:\nИмя: {data['name']}\nФамилия: {data['surname']}\nВозраст: {data['age']}")
+        db_user.filling_db(data)
+        db_history.set_data(user_id, command,data)
+    bot.delete_state(message.from_user.id, message.chat.id)
 
 @bot.message_handler(state=MyStates.age, is_digit=False)
 def age_incorrect(message):

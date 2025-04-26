@@ -1,0 +1,1 @@
+from tg_bot.keyboards.inline import all_buttons

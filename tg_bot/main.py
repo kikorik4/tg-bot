@@ -1,9 +1,12 @@
 from tg_bot.loader import bot
 from telebot import custom_filters, logger
 from handlers.search_handlers.filter import add_filters
-from tg_bot.handlers.search_handlers import history
-from tg_bot.api import search_hotel
-from handlers.states_handler import survey_user
+import handlers
+from handlers.default_handlers import start
+from utils.set_bot_commands import set_default_command
+from handlers.search_handlers import commands
+from keyboards.inline import delete_history, inline_calendar, all_buttons
+from handlers.callback_handler import photo_need, check_date
 
 if __name__ == "__main__":
     add_filters(bot)

@@ -1,0 +1,9 @@
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+
+from tg_bot.handlers.search_handlers.filter import for_history
+
+
+def get_clean_button():
+    keyboard = InlineKeyboardMarkup()
+    keyboard.add(InlineKeyboardButton('Очистить историю', callback_data=for_history.new(clean='Очистить')))
+    return keyboard

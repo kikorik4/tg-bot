@@ -1,127 +1,110 @@
-from pyexpat.errors import messages
-from datetime import datetime,date
-from telebot.types import Message
+import random
+
 from logger import logger
-from tg_bot.api.city_api import send_hotel_result, get_city_id, get_hotel_id
-from tg_bot.loader import bot
-from tg_bot.handlers.search_handlers import filter
+from telebot.types import InputMediaPhoto
+
+from tg_bot import api
+from tg_bot.config_data.config import url_hotels
+from tg_bot.loader import bot, db_history
 
 
-information = {}
-current_data = datetime.now().date()
-current_data = str(current_data)
+def find_and_show_hotels(message, data):
+    """
+    Формирование запросов на поиск отелей, и детальной информации о них (адрес, фотографии).
+    Вывод полученных данных пользователю в чат.
+    : param message : Message
+    : param data : Dict данные, собранные от пользователя
+    : return : None
+    """
+    payload = {"currency": "USD", "search_type": "CITY", "dest_id": f"{data['destination_id']}",
+               "arrival_date": f"{data['checkInDate']['year']}-{data['checkInDate']['month']}-{data['checkInDate']['day']}",
+               "departure_date": f"{data['checkOutDate']['year']}-{data['checkOutDate']['month']}-{data['checkOutDate']['day']}",
+               "price_min": f"{data['price_min']}", "price_max": f"{data['price_max']}"}
 
-@bot.message_handler(commands=['start'])
-def start(message):
-    chat_id = message.chat.id
-    bot.send_message(message.chat.id, 'Привет! Введи название города на латинице')
-    bot.register_next_step_handler(message, city_check)
+    # Отправка запроса серверу на поиск отелей
+    response_hotels = api.request_api.request('GET', url_hotels, payload)
+    logger.info(response_hotels.text)
+    logger.info(f'Сервер вернул ответ {response_hotels.status_code}. User_id: {message.chat.id}')
+    # Если сервер возвращает статус-код не 200, то все остальные действия будут бессмысленными.
+    if response_hotels.status_code == 200:
+        # Обработка полученного ответа от сервера и формирование отсортированного словаря с отелями
+        hotels = api.city_api.get_hotel_id(response_text=response_hotels.text, command=data['command'],
+                                           min_rate=int(data["min_rate"]), max_rate=int(data["max_rate"]),
+                                           count=int(data["quantity_hotels"]))
 
+        if 'error' in hotels:
+            bot.send_message(message.chat.id, hotels['error'])
+            bot.send_message(message.chat.id, 'Попробуйте осуществить поиск с другими параметрами')
+            bot.send_message(message.chat.id, '')
 
-def city_check(message):
-    chat_id = message.chat.id
-    city = message.text.strip()
-    try:
-        city_inf = get_city_id(f'{city}')
-    except TypeError as t:
-        bot.send_message(chat_id, 'Шо то не так')
-        again = error_handler(message)
-    except KeyError as k:
-        bot.send_message(chat_id, 'Введите город еще раз!')
-    except ValueError as v:
-        bot.send_message(chat_id, 'Введите город еще раз!')
-    except IndexError as i:
-        bot.send_message(chat_id, 'Ты неправ, мой друг')
-        again = error_handler(message)
+            # Нужен дополнительный запрос, чтобы получить детальную информацию об отеле.  # Цикл будет выполняться, пока не достигнет числа отелей, которое запросил пользователь.
+
+        db_history.set_data(message.chat.id, data)
+        medias = []
+        links_to_images = []
+        for hotel in hotels.values():
+            try:
+
+                for random_url in range(int(data['photo_count'])):
+                    links_to_images.append(hotel['photo'][random.randint(0, len(hotel['photo']) - 1)])
+            except IndexError:
+                continue  # Если количество фотографий > 0: создаем медиа группу с фотками и выводим ее в чат
+        if int(data['photo_count']) > 0:
+            # формируем MediaGroup с фотографиями и описанием отеля и посылаем в чат
+            for number, url in enumerate(links_to_images, 1):
+                medias.append(InputMediaPhoto(media=url))
+            if len(medias) > 10:
+                start = 0
+                medias_length = len(medias)
+                batch_size = 10
+                while start < medias_length:
+                    end = min(start + batch_size, medias_length)
+                    batch = medias[start:end]
+                    bot.send_media_group(message.chat.id, batch)
+                    start += batch_size
+            else:
+                bot.send_media_group(message.chat.id, medias)
+            logger.info(f"Выдаю найденную информацию в чат. User_id: {message.chat.id}")
+        # если фотки не нужны, то просто выводим данные об отеле
+        logger.info(f"Выдаю найденную информацию в чат. User_id: {message.chat.id}")
+        answer = ''
+        for i_hotel in hotels.values():
+            answer += f"{i_hotel['name']} цена - {i_hotel['price']} рейтинг - {i_hotel['rating']}\n"
+        bot.send_message(message.chat.id, answer)
     else:
-        logger.info('Я иду дальше')
-        information[chat_id] = {}
-        to = save_city(message)
-#    bot.set_state(message.from_user.id,UserState.checkIn)
-    with bot.retrieve_data(message.from_user.id) as data:
-        data['city'] = {'city': city}
+        bot.send_message(message.chat.id, f'Что-то пошло не так, код ошибки: {response_hotels.status_code}')
+    logger.info(f"Поиск окончен. User_id: {message.chat.id}")
+    bot.send_message(message.chat.id, 'Поиск окончен!')
+    bot.set_state(message.chat.id, None)
 
-def save_city(message):
-    chat_id = message.chat.id
-    city = message.text.strip().lower()
-    information[chat_id]['city'] = city
-    bot.send_message(chat_id, 'Введите дату заселения (ДД-ММ-ГГГГ):')
-    bot.register_next_step_handler(message, save_check_In)
 
-#@bot.message_handler(state=UserState.checkIn)
-#def get_checkIn(messsage: Message) -> None:
-    #chat_id = messsage.chat.id
-    #bot.send_message(messsage.from_user.id, 'Введите дату заселения (ДД-ММ-ГГГГ):')
-   # bot.register_next_step_handler(chat_id)
-   # bot.set_state(messsage.from_user.id,UserState.checkOut)
-
-def save_check_In(message):
-    chat_id = message.chat.id
-    check_in = message.text
-    try:
-        check_in_data = datetime.strptime(check_in, '%d-%m-%Y')
-        checkIn_data = check_in_data.strftime('%Y-%m-%d')
-        if checkIn_data <= current_data:
-            raise ValueError
-        information[chat_id]['checkIn'] = checkIn_data
-    except ValueError as v:
-        bot.send_message(chat_id, 'Введите, пожалуйста, еще раз в верном формате')
-        again = save_city(message)
+def print_data(message, data):
+    """
+    Выводим в чат всё, что собрали от пользователя и передаем это в функцию поиска
+    отелей.
+    : param message : Message
+    : param data: Dict данные собранные от пользователя
+    : return : None
+    """
+    # Отправляем в базу данных собранные данные, а там уже выберу что нужно
+    logger.info(f'Вывод суммарной информации о параметрах запроса пользователем. User_id: {message.chat.id}')
+    text_message = ('Исходные данные:\n'
+                    f'Дата и время запроса: {data["date_time"]}\n'
+                    f'Введена команда: {data["command"]}\n'
+                    f'Вы ввели город: {data["input_city"]}\n'
+                    f'Выбран город с id: {data["destination_id"]}\n'
+                    f'Количество отелей: {data["quantity_hotels"]}\n'
+                    f'Минимальная цена: {data["price_min"]}\n'
+                    f'Максимальная цена: {data["price_max"]}\n'
+                    f'Нужны ли фотографии? {data["photo_need"]}\n'
+                    f'Количество фотографий: {data["photo_count"]}\n'
+                    f'Дата заезда: {data["checkInDate"]["day"]}-'
+                    f'{data["checkInDate"]["month"]}-{data["checkInDate"]["year"]}\n'
+                    f'Дата выезда: {data["checkOutDate"]["day"]}-'
+                    f'{data["checkOutDate"]["month"]}-{data["checkOutDate"]["year"]}\n')
+    if data['sort'] == 'RATING':
+        bot.send_message(message.chat.id, text_message + f'Минимальный рейтинг: {data["min_rate"]}\n'
+                                                         f'Максимальный рейтинг: {data["max_rate"]}')
     else:
-        next = ask_checkOut(message)
-
-def ask_checkOut(message):
-    chat_id = message.chat.id
-    bot.send_message(chat_id, 'Введите дату выселения (ДД-ММ-ГГГГ):')
-    bot.register_next_step_handler(message, save_check_Out)
-
-
-
-#@bot.message_handler(state=UserState.checkOut)
-#def get_checkOut(message: Message) -> None:
- #   chat_id = message.chat.id
-  #  bot.send_message(message.from_user.id, 'Введите дату выселения (ДД-ММ-ГГГГ):')
-   # bot.register_next_step_handler(chat_id)
-
-def save_check_Out(message):
-    chat_id = message.chat.id
-    check_out = message.text
-    try:
-        check_out_data = datetime.strptime(check_out,'%d-%m-%Y')
-        checkOut_data = check_out_data.strftime('%Y-%m-%d')
-        if checkOut_data <= current_data or checkOut_data <= information[chat_id]['checkIn']:
-            raise ValueError
-        information[chat_id]['checkOut'] = checkOut_data
-    except ValueError as v:
-        bot.send_message(chat_id, 'Введите, пожалуйста, еще раз в верном формате')
-        again = ask_checkOut(message)
-    else:
-        city = information[chat_id]['city']
-        check_in = information[chat_id]['checkIn']
-        check_out = information[chat_id]['checkOut']
-        bot.send_message(chat_id,
-                     f'Введенная инфомация:\nГород: {city}\nДата заселения: {check_in}\nДата выселения: {check_out}')
-        result = get_city(message)
-
-
-def get_city(message):
-    chat_id = message.chat.id
-    city = information[chat_id]['city']
-    city_inf = get_city_id(f'{city}')
-    hotel_res = send_hotel_result(city_inf, information[chat_id]['checkIn'],
-                                 information[chat_id]['checkOut'], get_hotel_id)
-    bot.send_message(chat_id, f'Список отелей:\n{hotel_res}')
-
-def error_handler(message):
-    bot.send_message(message.chat.id, 'Введите город еще раз!')
-    bot.register_next_step_handler(message, city_check)
-
-
-
-#def get_data(message):
-   # bot.send_message(message.chat.id, 'Введи дату заселения в формате: yyyy-mm-dd')
-   # checkIn = message.text.strip()
-    #print(checkIn)
-
-
-
+        bot.send_message(message.chat.id, text_message)
+    find_and_show_hotels(message, data)
